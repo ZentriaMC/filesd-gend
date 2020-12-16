@@ -22,10 +22,17 @@ var (
 	dbPath     string
 )
 
+type RegisterType int
+
+const (
+	MessageRegister RegisterType = iota
+	MessageUnregister
+)
+
 type Targets map[uuid.UUID]TargetGroup
 
 type TargetRegisterMessage struct {
-	Register  bool
+	Action    RegisterType
 	TargetId  uuid.UUID
 	Target    *TargetGroup
 	updatedCh chan bool
@@ -128,7 +135,8 @@ func main() {
 
 	go func() {
 		for message := range targetUpdateCh {
-			if message.Register {
+			switch message.Action {
+			case MessageRegister:
 				var duplicateId *uuid.UUID = nil
 				for id, other := range targets {
 					if other.Eq(message.Target) {
@@ -158,7 +166,7 @@ func main() {
 				if err != nil {
 					zap.L().Error("failed to persist new target", zap.String("uuid", message.TargetId.String()), zap.Error(err))
 				}
-			} else {
+			case MessageUnregister:
 				_, ok := targets[message.TargetId]
 				delete(targets, message.TargetId)
 				message.updatedCh <- ok

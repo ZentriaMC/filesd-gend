@@ -50,7 +50,7 @@ func ConfigureEndpoint(registerCh chan<- *TargetRegisterMessage) func(w http.Res
 			// Register the target
 			targetId := uuid.NewV4()
 			updated, err := updateTarget(r.Context(), registerCh, &TargetRegisterMessage{
-				Register: true,
+				Action:   MessageRegister,
 				TargetId: targetId,
 				Target:   &newTargetGroup,
 			})
@@ -88,7 +88,7 @@ func ConfigureEndpoint(registerCh chan<- *TargetRegisterMessage) func(w http.Res
 			}
 
 			updated, err := updateTarget(r.Context(), registerCh, &TargetRegisterMessage{
-				Register: false,
+				Action:   MessageUnregister,
 				TargetId: targetId,
 			})
 			if err != nil {
