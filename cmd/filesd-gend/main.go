@@ -134,6 +134,11 @@ func main() {
 		zap.L().Panic("failed to load persisted targets", zap.Error(err))
 	}
 
+	// Generate sd on startup
+	if err := generateSd(&targets, sdFilePath); err != nil {
+		zap.L().Error("failed to generate initial sd file", zap.String("path", sdFilePath), zap.Error(err))
+	}
+
 	go func() {
 		for message := range targetUpdateCh {
 			switch message.Action {
