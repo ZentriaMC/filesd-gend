@@ -101,8 +101,10 @@ func main() {
 	mux.HandleFunc("/api/v1/configure", ConfigureEndpoint(targetUpdateCh))
 
 	srv := &http.Server{
-		Addr:    listenAddress,
-		Handler: mux,
+		Addr:         listenAddress,
+		Handler:      mux,
+		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  15 * time.Second,
 	}
 
 	go func() {
