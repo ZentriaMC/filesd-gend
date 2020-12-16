@@ -12,12 +12,14 @@ import (
 	"time"
 
 	uuid "github.com/satori/go.uuid"
+	"github.com/tidwall/buntdb"
 	"go.uber.org/zap"
 )
 
 var (
 	debugMode  bool
 	sdFilePath string
+	dbPath     string
 )
 
 type Targets map[uuid.UUID]TargetGroup
@@ -66,6 +68,7 @@ func updateTarget(ctx context.Context, registerCh chan<- *TargetRegisterMessage,
 func main() {
 	flag.BoolVar(&debugMode, "debug", false, "Debug mode (enables debug logging and other goodies)")
 	flag.StringVar(&sdFilePath, "sd-file", "./sd.json", "Prometheus service discovery file (https://prometheus.io/docs/guides/file-sd/)")
+	flag.StringVar(&dbPath, "db", "./filesd-gend.buntdb", "Persistent storage for targets (Use ':memory:' for practically no-op)")
 	flag.Parse()
 
 	exitCh := make(chan interface{}, 1)
@@ -76,6 +79,12 @@ func main() {
 		panic(err)
 	}
 	defer func() { _ = zap.L().Sync() }()
+
+	targetsDb, err := buntdb.Open(dbPath)
+	if err != nil {
+		zap.L().Panic("failed to open database", zap.Error(err))
+	}
+	defer targetsDb.Close()
 
 	targetUpdateCh := make(chan *TargetRegisterMessage)
 	mux := http.NewServeMux()
@@ -100,6 +109,23 @@ func main() {
 	}()
 
 	targets := make(Targets)
+
+	err = targetsDb.View(func(tx *buntdb.Tx) error {
+		return tx.Ascend("", func(key, value string) bool {
+			uuidKey := uuid.Must(uuid.FromString(key))
+			var decoded TargetGroup
+			if err := json.Unmarshal([]byte(value), &decoded); err != nil {
+				zap.L().Panic("failed to decode stored target", zap.Error(err))
+			}
+			zap.L().Debug("loaded previously stored target", zap.String("uuid", uuidKey.String()))
+			targets[uuidKey] = decoded
+			return true
+		})
+	})
+	if err != nil {
+		zap.L().Panic("failed to load persisted targets", zap.Error(err))
+	}
+
 	go func() {
 		for message := range targetUpdateCh {
 			if message.Register {
@@ -119,10 +145,35 @@ func main() {
 				}
 				message.updatedCh <- true
 				targets[message.TargetId] = *message.Target
+
+				// Persist
+				err := targetsDb.Update(func(tx *buntdb.Tx) error {
+					marshaled, err := json.Marshal(message.Target)
+					if err != nil {
+						return err
+					}
+					_, _, err = tx.Set(message.TargetId.String(), string(marshaled), nil)
+					return err
+				})
+				if err != nil {
+					zap.L().Error("failed to persist new target", zap.String("uuid", message.TargetId.String()), zap.Error(err))
+				}
 			} else {
 				_, ok := targets[message.TargetId]
 				delete(targets, message.TargetId)
 				message.updatedCh <- ok
+
+				if ok {
+					err := targetsDb.Update(func(tx *buntdb.Tx) error {
+						_, err := tx.Delete(message.TargetId.String())
+						return err
+					})
+					if err != nil {
+						zap.L().Error("failed to unpersist target", zap.String("uuid", message.TargetId.String()), zap.Error(err))
+					}
+				} else {
+					continue
+				}
 			}
 
 			if err := generateSd(&targets, sdFilePath); err != nil {
