@@ -17,9 +17,10 @@ import (
 )
 
 var (
-	debugMode  bool
-	sdFilePath string
-	dbPath     string
+	debugMode     bool
+	listenAddress string
+	sdFilePath    string
+	dbPath        string
 )
 
 type RegisterType int
@@ -75,6 +76,7 @@ func updateTarget(ctx context.Context, registerCh chan<- *TargetRegisterMessage,
 
 func main() {
 	flag.BoolVar(&debugMode, "debug", false, "Debug mode (enables debug logging and other goodies)")
+	flag.StringVar(&sdFilePath, "listen-addr", ":5555", "filesd-gend http listen address")
 	flag.StringVar(&sdFilePath, "sd-file", "./sd.json", "Prometheus service discovery file (https://prometheus.io/docs/guides/file-sd/)")
 	flag.StringVar(&dbPath, "db", "./filesd-gend.buntdb", "Persistent storage for targets (Use ':memory:' for practically no-op)")
 	flag.Parse()
@@ -99,7 +101,7 @@ func main() {
 	mux.HandleFunc("/api/v1/configure", ConfigureEndpoint(targetUpdateCh))
 
 	srv := &http.Server{
-		Addr:    "127.0.0.1:5555",
+		Addr:    listenAddress,
 		Handler: mux,
 	}
 
