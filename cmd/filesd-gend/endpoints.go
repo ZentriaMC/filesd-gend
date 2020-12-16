@@ -25,6 +25,19 @@ func ConfigureEndpoint(registerCh chan<- *TargetRegisterMessage) func(w http.Res
 				return
 			}
 
+			// Parse or generate uuid if not present
+			var targetId uuid.UUID
+			if t := newTargetGroup.TargetId; t != nil {
+				if tid, err := uuid.FromString(*t); err != nil {
+					http.Error(w, fmt.Sprintf("invalid uuid: %s", err), http.StatusBadRequest)
+					return
+				} else {
+					targetId = tid
+				}
+			} else {
+				targetId = uuid.NewV4()
+			}
+
 			// Ensure that there are no duplicate targets
 			seenTargets := make(map[string]bool)
 			for _, target := range newTargetGroup.Targets {
@@ -48,7 +61,7 @@ func ConfigureEndpoint(registerCh chan<- *TargetRegisterMessage) func(w http.Res
 			}
 
 			// Register the target
-			targetId := uuid.NewV4()
+			newTargetGroup.TargetId = nil
 			updated, err := updateTarget(r.Context(), registerCh, &TargetRegisterMessage{
 				Action:   MessageRegister,
 				TargetId: targetId,
@@ -93,6 +106,53 @@ func ConfigureEndpoint(registerCh chan<- *TargetRegisterMessage) func(w http.Res
 			})
 			if err != nil {
 				http.Error(w, fmt.Sprintf("failed to unregister target: %s", err), http.StatusInternalServerError)
+				return
+			}
+
+			if updated {
+				w.WriteHeader(http.StatusNoContent)
+			} else {
+				http.Error(w, "target did not exist", http.StatusConflict)
+			}
+		case "PATCH":
+			var targetUpdate struct {
+				TargetId string   `json:"target_id"`
+				Targets  []string `json:"targets"`
+			}
+			dec := json.NewDecoder(r.Body)
+			dec.DisallowUnknownFields()
+			if err := dec.Decode(&targetUpdate); err != nil {
+				http.Error(w, fmt.Sprintf("invalid json: %s", err), http.StatusBadRequest)
+				return
+			}
+
+			targetId, err := uuid.FromString(targetUpdate.TargetId)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("invalid uuid: %s", err), http.StatusBadRequest)
+				return
+			}
+
+			// Ensure that there are no duplicate targets
+			seenTargets := make(map[string]bool)
+			for _, target := range targetUpdate.Targets {
+				if _, ok := seenTargets[target]; ok {
+					http.Error(w, fmt.Sprintf("duplicate target: '%s'", target), http.StatusBadRequest)
+					return
+				} else {
+					seenTargets[target] = true
+				}
+			}
+
+			updated, err := updateTarget(r.Context(), registerCh, &TargetRegisterMessage{
+				Action:   MessageReplaceTargets,
+				TargetId: targetId,
+				Target: &TargetGroup{
+					Targets: targetUpdate.Targets,
+					Labels:  nil,
+				},
+			})
+			if err != nil {
+				http.Error(w, fmt.Sprintf("failed to update target: %s", err), http.StatusInternalServerError)
 				return
 			}
 

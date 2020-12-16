@@ -27,9 +27,10 @@ type RegisterType int
 const (
 	MessageRegister RegisterType = iota
 	MessageUnregister
+	MessageReplaceTargets
 )
 
-type Targets map[uuid.UUID]TargetGroup
+type Targets map[uuid.UUID]*TargetGroup
 
 type TargetRegisterMessage struct {
 	Action    RegisterType
@@ -47,7 +48,7 @@ func generateSd(targets *Targets, targetFile string) error {
 
 	defer targetFileTmp.Close()
 
-	targetsList := make([]TargetGroup, 0)
+	targetsList := make([]*TargetGroup, 0)
 	for _, target := range *targets {
 		targetsList = append(targetsList, target)
 	}
@@ -125,7 +126,7 @@ func main() {
 				zap.L().Panic("failed to decode stored target", zap.Error(err))
 			}
 			zap.L().Debug("loaded previously stored target", zap.String("uuid", uuidKey.String()))
-			targets[uuidKey] = decoded
+			targets[uuidKey] = &decoded
 			return true
 		})
 	})
@@ -152,7 +153,7 @@ func main() {
 					zap.L().Debug("registered new target", zap.Reflect("target", message.Target))
 				}
 				message.updatedCh <- true
-				targets[message.TargetId] = *message.Target
+				targets[message.TargetId] = message.Target
 
 				// Persist
 				err := targetsDb.Update(func(tx *buntdb.Tx) error {
@@ -181,6 +182,28 @@ func main() {
 					}
 				} else {
 					continue
+				}
+			case MessageReplaceTargets:
+				target, ok := targets[message.TargetId]
+				if !ok {
+					message.updatedCh <- ok
+					continue
+				}
+
+				zap.L().Debug("replacing targets", zap.String("uuid", message.TargetId.String()))
+				target.Targets = message.Target.Targets
+				message.updatedCh <- ok
+
+				err := targetsDb.Update(func(tx *buntdb.Tx) error {
+					marshaled, err := json.Marshal(target)
+					if err != nil {
+						return err
+					}
+					_, _, err = tx.Set(message.TargetId.String(), string(marshaled), nil)
+					return err
+				})
+				if err != nil {
+					zap.L().Error("failed to persist updated target", zap.String("uuid", message.TargetId.String()), zap.Error(err))
 				}
 			}
 

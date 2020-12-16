@@ -1,8 +1,9 @@
 package main
 
 type TargetGroup struct {
-	Targets []string          `json:"targets"`
-	Labels  map[string]string `json:"labels"`
+	TargetId *string           `json:"target_id,omitempty"`
+	Targets  []string          `json:"targets"`
+	Labels   map[string]string `json:"labels"`
 }
 
 func (t *TargetGroup) Eq(o *TargetGroup) bool {
