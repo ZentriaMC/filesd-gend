@@ -155,7 +155,7 @@ func main() {
 					}
 				}
 				if duplicateId != nil {
-					zap.L().Warn("attempted to register duplicate, skipped", zap.String("duplicateId", duplicateId.String()))
+					zap.L().Debug("attempted to register duplicate, skipped", zap.String("duplicateId", duplicateId.String()))
 					message.updatedCh <- false
 					continue
 				} else {
