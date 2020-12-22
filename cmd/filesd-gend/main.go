@@ -76,7 +76,7 @@ func updateTarget(ctx context.Context, registerCh chan<- *TargetRegisterMessage,
 
 func main() {
 	flag.BoolVar(&debugMode, "debug", false, "Debug mode (enables debug logging and other goodies)")
-	flag.StringVar(&sdFilePath, "listen-addr", ":5555", "filesd-gend http listen address")
+	flag.StringVar(&listenAddress, "listen-addr", ":5555", "filesd-gend http listen address")
 	flag.StringVar(&sdFilePath, "sd-file", "./sd.json", "Prometheus service discovery file (https://prometheus.io/docs/guides/file-sd/)")
 	flag.StringVar(&dbPath, "db", "./filesd-gend.buntdb", "Persistent storage for targets (Use ':memory:' for practically no-op)")
 	flag.Parse()
