@@ -4,6 +4,6 @@ go 1.15
 
 require (
 	github.com/satori/go.uuid v1.2.0
-	github.com/tidwall/buntdb v1.1.5
+	github.com/tidwall/buntdb v1.1.6
 	go.uber.org/zap v1.16.0
 )
