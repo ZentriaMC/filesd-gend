@@ -2,6 +2,6 @@
 set -e
 
 docker build \
-	-t zentria/prometheus-file-gen \
-	-t docker.zentria.ee/svc/prometheus-file-gen \
+	-t zentria/filesd-gend \
+	-t docker.zentria.ee/svc/filesd-gend \
 	-f docker/Dockerfile .
