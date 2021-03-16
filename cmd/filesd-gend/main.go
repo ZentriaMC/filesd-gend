@@ -99,6 +99,10 @@ func main() {
 	targetUpdateCh := make(chan *TargetRegisterMessage)
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/v1/configure", ConfigureEndpoint(targetUpdateCh))
+	mux.HandleFunc("/api/v1/ping", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	})
 
 	srv := &http.Server{
 		Addr:         listenAddress,
