@@ -75,7 +75,7 @@ func ConfigureEndpoint(registerCh chan<- *TargetRegisterMessage) func(w http.Res
 			if updated {
 				w.Header().Add("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
-				json.NewEncoder(w).Encode(struct {
+				_ = json.NewEncoder(w).Encode(struct {
 					TargetId string `json:"target_id"`
 				}{
 					targetId.String(),
