@@ -42,7 +42,7 @@ type TargetRegisterMessage struct {
 
 func generateSd(targets *Targets, targetFile string) error {
 	targetFileNameTmp := fmt.Sprintf("%s/.%s.tmp", path.Dir(targetFile), path.Base(targetFile))
-	targetFileTmp, err := os.OpenFile(targetFileNameTmp, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0o600)
+	targetFileTmp, err := os.OpenFile(targetFileNameTmp, os.O_TRUNC|os.O_WRONLY|os.O_CREATE, 0o644)
 	if err != nil {
 		return err
 	}
