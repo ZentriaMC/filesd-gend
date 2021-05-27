@@ -162,7 +162,7 @@ func ConfigureEndpoint(registerCh chan<- *TargetRegisterMessage) func(w http.Res
 				http.Error(w, "target did not exist", http.StatusConflict)
 			}
 		default:
-			w.WriteHeader(http.StatusNotFound)
+			w.WriteHeader(http.StatusMethodNotAllowed)
 		}
 	}
 }
