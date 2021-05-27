@@ -11,7 +11,7 @@ import (
 func ConfigureEndpoint(registerCh chan<- *TargetRegisterMessage) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
-		case "PUT":
+		case http.MethodPut:
 			var newTargetGroup TargetGroup
 			dec := json.NewDecoder(r.Body)
 			dec.DisallowUnknownFields()
@@ -83,7 +83,7 @@ func ConfigureEndpoint(registerCh chan<- *TargetRegisterMessage) func(w http.Res
 			} else {
 				http.Error(w, "attempted to register duplicate target", http.StatusConflict)
 			}
-		case "DELETE":
+		case http.MethodDelete:
 			var targetIdHolder struct {
 				TargetId string `json:"target_id"`
 			}
@@ -114,7 +114,7 @@ func ConfigureEndpoint(registerCh chan<- *TargetRegisterMessage) func(w http.Res
 			} else {
 				http.Error(w, "target did not exist", http.StatusConflict)
 			}
-		case "PATCH":
+		case http.MethodPatch:
 			var targetUpdate struct {
 				TargetId string   `json:"target_id"`
 				Targets  []string `json:"targets"`
