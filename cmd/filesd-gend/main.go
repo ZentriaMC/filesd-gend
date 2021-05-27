@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -13,6 +12,7 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/tidwall/buntdb"
+	"github.com/urfave/cli/v2"
 	"go.uber.org/zap"
 )
 
@@ -75,12 +75,46 @@ func updateTarget(ctx context.Context, registerCh chan<- *TargetRegisterMessage,
 }
 
 func main() {
-	flag.BoolVar(&debugMode, "debug", false, "Debug mode (enables debug logging and other goodies)")
-	flag.StringVar(&listenAddress, "listen-addr", ":5555", "filesd-gend http listen address")
-	flag.StringVar(&sdFilePath, "sd-file", "./sd.json", "Prometheus service discovery file (https://prometheus.io/docs/guides/file-sd/)")
-	flag.StringVar(&dbPath, "db", "./filesd-gend.buntdb", "Persistent storage for targets (Use ':memory:' for practically no-op)")
-	flag.Parse()
+	app := &cli.App{
+		Name: "filesd-gend",
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:        "debug",
+				Usage:       "Debug mode (enables debug logging and other goodies)",
+				Value:       false,
+				EnvVars:     []string{"FILESD_GEND_DEBUG"},
+				Destination: &debugMode,
+			},
+			&cli.StringFlag{
+				Name:        "listen-addr",
+				Usage:       "HTTP API listen address",
+				Value:       ":5555",
+				EnvVars:     []string{"FILESD_GEND_HTTP_API_ADDR"},
+				Destination: &listenAddress,
+			},
+			&cli.StringFlag{
+				Name:        "sd-file",
+				Usage:       "Path to where write Prometheus service discovery file (https://prometheus.io/docs/guides/file-sd/)",
+				Value:       "./sd.json",
+				EnvVars:     []string{"FILESD_GEND_SD_FILE_PATH"},
+				Destination: &sdFilePath,
+			},
+			&cli.StringFlag{
+				Name:        "db",
+				Usage:       "Persistent storage for targets (Use ':memory:' for practically no-op)",
+				Value:       "./filesd-gend.buntdb",
+				EnvVars:     []string{"FILESD_GEND_DB_PATH"},
+				Destination: &dbPath,
+			},
+		},
+		Action: entrypoint,
+	}
+	if err := app.Run(os.Args); err != nil {
+		zap.L().Error("encountered unhandled error", zap.Error(err))
+	}
+}
 
+func entrypoint(cctx *cli.Context) (err error) {
 	exitCh := make(chan interface{}, 1)
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt)
@@ -239,20 +273,21 @@ func main() {
 	if err := srv.Close(); err != nil {
 		zap.L().Error("failed to close http server", zap.Error(err))
 	}
+
+	return
 }
 
-func setupLogging() error {
+func setupLogging() (err error) {
 	var logger *zap.Logger
-	var err error
 	if debugMode {
 		logger, err = zap.NewDevelopment()
 	} else {
 		logger, err = zap.NewProduction()
 	}
 	if err != nil {
-		return err
+		return
 	}
 
 	zap.ReplaceGlobals(logger)
-	return nil
+	return
 }
