@@ -14,6 +14,7 @@ import (
 	"github.com/tidwall/buntdb"
 	"github.com/urfave/cli/v2"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 var (
@@ -278,13 +279,16 @@ func entrypoint(cctx *cli.Context) (err error) {
 }
 
 func setupLogging() (err error) {
-	var logger *zap.Logger
+	var cfg zap.Config
 	if debugMode {
-		logger, err = zap.NewDevelopment()
+		cfg = zap.NewDevelopmentConfig()
+		cfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	} else {
-		logger, err = zap.NewProduction()
+		cfg = zap.NewProductionConfig()
 	}
-	if err != nil {
+
+	var logger *zap.Logger
+	if logger, err = cfg.Build(); err != nil {
 		return
 	}
 
