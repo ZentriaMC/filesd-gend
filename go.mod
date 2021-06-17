@@ -7,7 +7,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/satori/go.uuid v1.2.0
 	github.com/tidwall/btree v0.5.0 // indirect
-	github.com/tidwall/buntdb v1.2.3
+	github.com/tidwall/buntdb v1.2.4
 	github.com/tidwall/gjson v1.8.0 // indirect
 	github.com/tidwall/pretty v1.1.1 // indirect
 	github.com/urfave/cli/v2 v2.3.0
