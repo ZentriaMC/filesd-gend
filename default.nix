@@ -5,7 +5,7 @@ buildGoModule rec {
 
   src = lib.cleanSource ./.;
 
-  vendorSha256 = "sha256-E7qVEYPqFWf/iEWfW5MiaLJgg4Oed5iN+eTo/SyJRRY=";
+  vendorSha256 = "sha256-5cMr5TquP+PjtClpqOFlotjMtTkiTvMIKDt9OQpze5Q=";
   subPackages = [ "cmd/filesd-gend" ];
 
   meta = with lib; {
