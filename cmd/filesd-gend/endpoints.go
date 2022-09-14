@@ -41,24 +41,21 @@ func ConfigureEndpoint(registerCh chan<- *TargetRegisterMessage) func(w http.Res
 			// Ensure that there are no duplicate targets
 			seenTargets := make(map[string]bool)
 			for _, target := range newTargetGroup.Targets {
-				if _, ok := seenTargets[target]; ok {
-					http.Error(w, fmt.Sprintf("duplicate target: '%s'", target), http.StatusBadRequest)
-					return
-				} else {
-					seenTargets[target] = true
-				}
+				seenTargets[target] = true
 			}
 
-			// Ensure that there are no duplicate labels
+			// Ensure that there are no duplicate labels - always honor last seen label.
 			seenLabels := make(map[string]string)
 			for label, v := range newTargetGroup.Labels {
-				if v2, ok := seenLabels[label]; ok && v2 == v {
-					http.Error(w, fmt.Sprintf("duplicate label: '%s'", label), http.StatusBadRequest)
-					return
-				} else {
-					seenLabels[label] = v
-				}
+				seenLabels[label] = v
 			}
+
+			deduplicatedTargets := []string{}
+			for target := range seenTargets {
+				deduplicatedTargets = append(deduplicatedTargets, target)
+			}
+			newTargetGroup.Targets = deduplicatedTargets
+			newTargetGroup.Labels = seenLabels
 
 			// Register the target
 			newTargetGroup.TargetId = nil
@@ -135,13 +132,14 @@ func ConfigureEndpoint(registerCh chan<- *TargetRegisterMessage) func(w http.Res
 			// Ensure that there are no duplicate targets
 			seenTargets := make(map[string]bool)
 			for _, target := range targetUpdate.Targets {
-				if _, ok := seenTargets[target]; ok {
-					http.Error(w, fmt.Sprintf("duplicate target: '%s'", target), http.StatusBadRequest)
-					return
-				} else {
-					seenTargets[target] = true
-				}
+				seenTargets[target] = true
 			}
+
+			deduplicatedTargets := []string{}
+			for target := range seenTargets {
+				deduplicatedTargets = append(deduplicatedTargets, target)
+			}
+			targetUpdate.Targets = deduplicatedTargets
 
 			updated, err := updateTarget(r.Context(), registerCh, &TargetRegisterMessage{
 				Action:   MessageReplaceTargets,
