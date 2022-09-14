@@ -1,6 +1,6 @@
 module github.com/ZentriaMC/prometheus-file-gen
 
-go 1.18
+go 1.19
 
 require (
 	github.com/satori/go.uuid v1.2.0

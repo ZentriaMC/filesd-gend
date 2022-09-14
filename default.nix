@@ -1,5 +1,5 @@
-{ lib, buildGoModule, rev }:
-buildGoModule rec {
+{ lib, buildGo119Module, rev }:
+buildGo119Module rec {
   pname = "filesd-gend";
   version = rev;
 
