@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/tidwall/buntdb v1.2.10
-	github.com/urfave/cli/v2 v2.16.3
+	github.com/urfave/cli/v2 v2.27.1
 	go.uber.org/zap v1.23.0
 )
 
