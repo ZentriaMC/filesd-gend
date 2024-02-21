@@ -6,7 +6,7 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/tidwall/buntdb v1.2.10
 	github.com/urfave/cli/v2 v2.16.3
-	go.uber.org/zap v1.23.0
+	go.uber.org/zap v1.27.0
 )
 
 require (
@@ -21,5 +21,5 @@ require (
 	github.com/tidwall/tinyqueue v0.1.1 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
-	go.uber.org/multierr v1.8.0 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
 )
